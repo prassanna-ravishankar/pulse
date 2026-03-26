@@ -16,7 +16,13 @@ from pulse.tools_mem0 import get_mem0_tools
 
 
 def _build_task_store():
-    """Build task store — DatabaseTaskStore if DATABASE_URL is set, else in-memory."""
+    """Build task store — Redis if REDIS_URL set, Postgres if DATABASE_URL set, else in-memory."""
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        from fastharness.stores.redis import RedisTaskStore
+
+        return RedisTaskStore(redis_url, ttl_seconds=3600)
+
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
         from a2a.server.tasks.database_task_store import DatabaseTaskStore
@@ -24,6 +30,7 @@ def _build_task_store():
 
         engine = create_async_engine(db_url)
         return DatabaseTaskStore(engine=engine)
+
     return None  # FastHarness defaults to InMemoryTaskStore
 
 
