@@ -34,7 +34,7 @@ harness.agent(
         ),
     ],
     system_prompt=SYSTEM_PROMPT,
-    model="claude-sonnet-4-5-20250929",
+    model="anthropic:claude-sonnet-4-5-20250929",
     custom_tools=get_k8s_tools() + get_mem0_tools(),
     setting_sources=[],
 )

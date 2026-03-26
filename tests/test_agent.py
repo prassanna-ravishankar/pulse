@@ -23,7 +23,7 @@ class TestAgentWiring:
             assert len(harness._agents) == 1
 
             agent = harness._agents["pulse-observer"]
-            assert agent.config.model == "claude-sonnet-4-5-20250929"
+            assert agent.config.model == "anthropic:claude-sonnet-4-5-20250929"
             assert len(agent.config.custom_tools) == 12  # 9 k8s + 3 mem0
             assert agent.config.system_prompt is not None
             assert "OBSERVE" in agent.config.system_prompt
