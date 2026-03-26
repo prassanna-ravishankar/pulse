@@ -33,11 +33,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - id: auth
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/1012164228161/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+          service_account: gh-deploy-pulse@baldmaninc.iam.gserviceaccount.com
 
       - uses: google-github-actions/setup-gcloud@v2
 
@@ -55,15 +54,11 @@ jobs:
           cache-from: type=registry,ref=us-docker.pkg.dev/baldmaninc/gcr.io/pulse:latest
           cache-to: type=inline
 
-      - uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ secrets.GKE_CLUSTER }}
-          location: ${{ secrets.GKE_REGION }}
+      - name: Get GKE credentials
+        run: gcloud container clusters get-credentials clusterkit --region us-central1
 
       - name: Deploy
         run: |
-          cd k8s
-          sed -i "s|us-docker.pkg.dev/baldmaninc/gcr.io/pulse:latest|us-docker.pkg.dev/baldmaninc/gcr.io/pulse:${{ github.sha }}|" deployment.yaml
-          kubectl apply -f deployment.yaml
-          kubectl apply -f service.yaml
+          kubectl apply -f k8s/rbac.yaml
+          kubectl set image deployment/pulse pulse=us-docker.pkg.dev/baldmaninc/gcr.io/pulse:${{ github.sha }} -n pulse
           kubectl rollout status deployment/pulse -n pulse --timeout=120s
