@@ -15,6 +15,7 @@ spec:
       labels:
         app: pulse
     spec:
+      serviceAccountName: pulse
       nodeSelector:
         cloud.google.com/gke-spot: "true"
       tolerations:
