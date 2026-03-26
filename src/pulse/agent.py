@@ -5,6 +5,8 @@ Wires k8s and mem0 tools into fastharness with DeepAgentsRuntimeFactory.
 
 from __future__ import annotations
 
+import os
+
 from fastharness import FastHarness, Skill
 from fastharness.runtime.deepagents import DeepAgentsRuntimeFactory
 
@@ -12,10 +14,24 @@ from pulse.prompt import SYSTEM_PROMPT
 from pulse.tools_k8s import get_k8s_tools
 from pulse.tools_mem0 import get_mem0_tools
 
+
+def _build_task_store():
+    """Build task store — DatabaseTaskStore if DATABASE_URL is set, else in-memory."""
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        from a2a.server.tasks.database_task_store import DatabaseTaskStore
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        engine = create_async_engine(db_url)
+        return DatabaseTaskStore(engine=engine)
+    return None  # FastHarness defaults to InMemoryTaskStore
+
+
 harness = FastHarness(
     name="pulse",
     description="Resident infrastructure agent — observes k8s, remembers, reports",
     runtime_factory=DeepAgentsRuntimeFactory(ttl_minutes=30),
+    task_store=_build_task_store(),
 )
 
 harness.agent(

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulse
+  namespace: pulse
+  labels:
+    app: pulse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pulse
+  template:
+    metadata:
+      labels:
+        app: pulse
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-spot: "true"
+      tolerations:
+        - effect: NoSchedule
+          key: cloud.google.com/gke-spot
+          operator: Equal
+          value: "true"
+      containers:
+        - name: pulse
+          image: us-docker.pkg.dev/baldmaninc/gcr.io/pulse:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pulse-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: MEM0_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pulse-secrets
+                  key: MEM0_API_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
